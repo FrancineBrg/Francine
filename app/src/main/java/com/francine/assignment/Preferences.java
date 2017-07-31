@@ -5,16 +5,16 @@ import android.content.SharedPreferences;
 
 public class Preferences {
 
-    public void setPreferences(int key, Context context) {
+    public void setPreferences(String key, Context context) {
         SharedPreferences prefs = context.getSharedPreferences("preferences", context.MODE_PRIVATE);
         SharedPreferences.Editor ed = prefs.edit();
-        ed.putInt("key", key);
+        ed.putString("key", key);
         ed.commit();
     }
 
-    public int getPreferences(Context context) {
+    public String getPreferences(Context context) {
         SharedPreferences prefs = context.getSharedPreferences("preferences", context.MODE_PRIVATE);
-        int key = prefs.getInt("key", 0);
+        String key = prefs.getString("key", null);
         return (key);
     }
 }

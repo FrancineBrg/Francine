@@ -15,6 +15,9 @@ import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 
 public class ScanCodeActivity extends Activity {
@@ -24,7 +27,6 @@ public class ScanCodeActivity extends Activity {
     private SurfaceView cameraView;
     private TextView barcodeValue;
 
-    private static final int RC_HANDLE_CAMERA_PERM = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +53,9 @@ public class ScanCodeActivity extends Activity {
                     if (rc == PackageManager.PERMISSION_GRANTED) {
                         cameraSource.start(cameraView.getHolder());
                     } else {
-                        requestCameraPermission();
+                        finish();
                     }
+
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -81,7 +84,17 @@ public class ScanCodeActivity extends Activity {
                         @Override
                         public void run() {
                             //Update barcode value to TextView
-                            barcodeValue.setText(barcodes.valueAt(0).displayValue);
+                            JSONObject jsonObj = null;
+                            try {
+                                jsonObj = new JSONObject(barcodes.valueAt(0).displayValue);
+
+                                String key = jsonObj.getString("key");
+                                Preferences prefs = new Preferences();
+                                prefs.setPreferences(key, ScanCodeActivity.this);
+                                finish();
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
                         }
                     });
                 }
@@ -94,15 +107,5 @@ public class ScanCodeActivity extends Activity {
         super.onDestroy();
         cameraSource.release();
         barcodeDetector.release();
-    }
-
-    // Handles the requesting of the camera permission.
-    private void requestCameraPermission() {
-        final String[] permissions = new String[]{android.Manifest.permission.CAMERA};
-
-        if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
-                android.Manifest.permission.CAMERA)) {
-            ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM);
-        }
     }
 }
