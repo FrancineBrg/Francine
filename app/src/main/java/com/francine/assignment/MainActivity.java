@@ -9,11 +9,17 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.text.DecimalFormat;
+
 public class MainActivity extends Activity {
 
     private TextView textKey;
     private Button btnGetKey;
     private Button btnDelete;
+    private DecimalFormat df = new DecimalFormat("000000");
+
+    private byte hash[];
+    private long otp;
 
     private static final int RC_HANDLE_CAMERA_PERM = 2;
 
@@ -31,21 +37,18 @@ public class MainActivity extends Activity {
         btnGetKey = (Button) findViewById(R.id.btn_get_key);
         btnDelete = (Button) findViewById(R.id.btn_delete);
 
-        Preferences prefs = new Preferences();
-        String key = prefs.getPreferences(this);
-        if (key != null) {
-            textKey.setText(key);
-            btnGetKey.setVisibility(View.GONE);
-        } else {
-            textKey.setText("");
-            btnGetKey.setVisibility(View.VISIBLE);
-        }
+
 
         btnGetKey.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, ScanCodeActivity.class);
-                startActivity(intent);
+                int rc = ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.CAMERA);
+                if (rc != PackageManager.PERMISSION_GRANTED) {
+                    requestCameraPermission();
+                } else {
+                    Intent intent = new Intent(MainActivity.this, ScanCodeActivity.class);
+                    startActivity(intent);
+                }
             }
         });
 
@@ -71,24 +74,35 @@ public class MainActivity extends Activity {
         Preferences prefs = new Preferences();
         String key = prefs.getPreferences(this);
         if (key != null) {
-            textKey.setText(key);
+            hash = generateOtp(key);
+            generate();
+            textKey.setText(df.format(otp));
             btnGetKey.setVisibility(View.GONE);
         } else {
             textKey.setText("");
             btnGetKey.setVisibility(View.VISIBLE);
         }
-
     }
 
     // Handles the requesting of the camera permission.
     private void requestCameraPermission() {
         final String[] permissions = new String[]{android.Manifest.permission.CAMERA};
-
-        if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
-                android.Manifest.permission.CAMERA)) {
-            ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM);
-        }
+        ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM);
     }
+
+    private void generate() {
+        byte aux[] = new byte[4];
+        aux[0] = hash[10];
+        aux[1] = hash[11];
+        aux[2] = hash[12];
+        aux[3] = hash[13];
+
+        StringBuilder sb = new StringBuilder(aux.length * 2);
+        for(byte b: aux)
+            sb.append(String.format("%02x", b));
+
+        otp = Long.parseLong(sb.toString(), 16) % 1000000;
+    };
 
     public native byte[] generateOtp(String key);
 
