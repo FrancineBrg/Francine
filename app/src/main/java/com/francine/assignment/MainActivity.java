@@ -28,16 +28,9 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        int rc = ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.CAMERA);
-        if (rc != PackageManager.PERMISSION_GRANTED) {
-            requestCameraPermission();
-        }
-
         textKey = (TextView) findViewById(R.id.text_key);
         btnGetKey = (Button) findViewById(R.id.btn_get_key);
         btnDelete = (Button) findViewById(R.id.btn_delete);
-
-
 
         btnGetKey.setOnClickListener(new View.OnClickListener() {
             @Override

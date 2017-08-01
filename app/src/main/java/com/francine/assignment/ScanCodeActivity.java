@@ -25,7 +25,6 @@ public class ScanCodeActivity extends Activity {
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
     private SurfaceView cameraView;
-    private TextView barcodeValue;
 
 
     @Override
@@ -34,7 +33,6 @@ public class ScanCodeActivity extends Activity {
         setContentView(R.layout.activity_scan_code);
 
         cameraView = (SurfaceView) findViewById(R.id.surface_view);
-        barcodeValue = (TextView) findViewById(R.id.barcode_value);
 
         barcodeDetector = new BarcodeDetector.Builder(this)
                 .setBarcodeFormats(Barcode.ALL_FORMATS)
@@ -80,23 +78,17 @@ public class ScanCodeActivity extends Activity {
             public void receiveDetections(Detector.Detections<Barcode> detections) {
                 final SparseArray<Barcode> barcodes = detections.getDetectedItems();
                 if (barcodes.size() != 0) {
-                    barcodeValue.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            //Update barcode value to TextView
-                            JSONObject jsonObj = null;
-                            try {
-                                jsonObj = new JSONObject(barcodes.valueAt(0).displayValue);
+                    JSONObject jsonObj = null;
+                    try {
+                        jsonObj = new JSONObject(barcodes.valueAt(0).displayValue);
 
-                                String key = jsonObj.getString("key");
-                                Preferences prefs = new Preferences();
-                                prefs.setPreferences(key, ScanCodeActivity.this);
-                                finish();
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
+                        String key = jsonObj.getString("key");
+                        Preferences prefs = new Preferences();
+                        prefs.setPreferences(key, ScanCodeActivity.this);
+                        finish();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         });
