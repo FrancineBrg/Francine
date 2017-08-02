@@ -12,8 +12,6 @@ The application consists of scanning a QR code and storing the key contained in 
 
 ### Challenges faced
 
-Challenges faced
-
 I separated the execution of the task into 3 parts: ¹scan the QR code, ²inclusion of the native library and ³OTP generation.
 
 1- I researched the best way to implement QR code scanning and I had no problems implementing it.
