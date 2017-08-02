@@ -28,6 +28,7 @@ public class MainActivity extends Activity {
     private int cont = 0;
 
     private static final int RC_HANDLE_CAMERA_PERM = 2;
+    private static final int SECONDS_TO_UPDATE = 30 - 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +125,11 @@ public class MainActivity extends Activity {
 
     private void setTimer() {
         timer = new Timer();
+
+        if (task != null) {
+            task.cancel();
+        }
+
         task = new TimerTask() {
             public void run() {
                 runOnUiThread(new Runnable() {
@@ -132,7 +138,7 @@ public class MainActivity extends Activity {
                         try {
                             if (cont <= 0) {
                                 displayOtp();
-                                cont = 30;
+                                cont = SECONDS_TO_UPDATE;
                             } else {
                                 cont--;
                             }
