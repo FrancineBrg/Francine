@@ -10,14 +10,19 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import java.text.DecimalFormat;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends Activity {
 
     private TextView textKey;
     private Button btnGetKey;
     private Button btnDelete;
+    private Timer timer;
+    private TimerTask task;
     private DecimalFormat df = new DecimalFormat("000000");
 
+    private String key;
     private byte hash[];
     private long otp;
 
@@ -53,6 +58,8 @@ public class MainActivity extends Activity {
                 onResume();
             }
         });
+
+        setTimer();
     }
 
     @Override
@@ -65,16 +72,16 @@ public class MainActivity extends Activity {
         }
 
         Preferences prefs = new Preferences();
-        String key = prefs.getPreferences(this);
-        if (key != null) {
-            hash = generateOtp(key);
-            generate();
-            textKey.setText(df.format(otp));
-            btnGetKey.setVisibility(View.GONE);
-        } else {
-            textKey.setText("");
-            btnGetKey.setVisibility(View.VISIBLE);
-        }
+        key = prefs.getPreferences(this);
+        displayOtp();
+        setTimer();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        task.cancel();
+        timer.cancel();
     }
 
     // Handles the requesting of the camera permission.
@@ -95,6 +102,37 @@ public class MainActivity extends Activity {
             sb.append(String.format("%02x", b));
 
         otp = Long.parseLong(sb.toString(), 16) % 1000000;
+    };
+
+    private void displayOtp() {
+        if (key != null) {
+            hash = generateOtp(key);
+            generate();
+            textKey.setText(df.format(otp));
+            btnGetKey.setVisibility(View.GONE);
+        } else {
+            textKey.setText("");
+            btnGetKey.setVisibility(View.VISIBLE);
+        }
+    };
+
+    private void setTimer() {
+        timer = new Timer();
+        task = new TimerTask() {
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            displayOtp();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+        };
+        timer.schedule(task, 1000, 1000); ;
     };
 
     public native byte[] generateOtp(String key);
