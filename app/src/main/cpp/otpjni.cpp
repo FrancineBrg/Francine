@@ -28,9 +28,16 @@ Java_com_francine_assignment_MainActivity_generateOtp(JNIEnv *env, jobject thiz,
     jbyteArray digestByteArray = env->NewByteArray(20);
     env->SetByteArrayRegion(digestByteArray, 0, 20 , digestLocal);
 
-    free(digestLocal);
-    free(digest);
-    free(keyLocal);
+    if (digestLocal != NULL) {
+        free(digestLocal);
+    }
+    if (digest != NULL) {
+        free(digest);
+    }
+
+    if (keyLocal != NULL) {
+        free(keyLocal);
+    }
 
     return digestByteArray;
 }

@@ -25,6 +25,7 @@ public class MainActivity extends Activity {
     private String key;
     private byte hash[];
     private long otp;
+    private int cont = 0;
 
     private static final int RC_HANDLE_CAMERA_PERM = 2;
 
@@ -80,8 +81,13 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        task.cancel();
-        timer.cancel();
+        try {
+            cont = 0;
+            task.cancel();
+            timer.cancel();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Handles the requesting of the camera permission.
@@ -124,7 +130,12 @@ public class MainActivity extends Activity {
                     @Override
                     public void run() {
                         try {
-                            displayOtp();
+                            if (cont <= 0) {
+                                displayOtp();
+                                cont = 30;
+                            } else {
+                                cont--;
+                            }
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
