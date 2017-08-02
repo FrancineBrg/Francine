@@ -1,6 +1,6 @@
 # Assignment Francine
 
-The application consists of scanning a QR code and storing the key contained in it. From this stored key, the application will generate a token every 30 seconds and display it on the screen.
+The application consists of scanning a QR code and storing the key contained on it. From this stored key, the application will create a token every 30 seconds and display it on the screen.
 
 
 ### Requirements for the project
@@ -14,7 +14,7 @@ The application consists of scanning a QR code and storing the key contained in 
 
 I separated the execution of the task into 3 parts: ¹scan the QR code, ²inclusion of the native library and ³OTP generation.
 
-1- I researched the best way to implement QR code scanning and I had no problems implementing it.
+1- I researched the best way to implement QR code scanning and I did not had any problem implementing it.
 
 2- The inclusion of the native library was a bit more complicated but it happened without problems. I had to research a little more on the subject to be able to implement it.
 
@@ -22,6 +22,6 @@ I separated the execution of the task into 3 parts: ¹scan the QR code, ²inclus
 
 #### Considerations:
 
-The task was challenging because I had not worked with those resources yet. I worked hard to develop it in the best way possible and I was very satisfied with the result.
+The task was challenging because I have not worked with those resources yet. I worked hard to develop it in the best way possible and I was very satisfied with the result.
 
 
