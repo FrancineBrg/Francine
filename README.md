@@ -24,4 +24,19 @@ I separated the execution of the task into 3 parts: ¹scan the QR code, ²inclus
 
 The task was challenging because I have not worked with those resources yet. I worked hard to develop it in the best way possible and I was very satisfied with the result.
 
+----------------------------------------------------------------------------------------------------------------------------------------
+
+### Code review
+
+The functionality was not implemented I had really forgotten. But this implementation was easy.
+
+Te timer implementation was replaced bu "Alarm Manager", which was able to do the same but cleaner. With this implementation, was possible remove callback methods from Android's lifecycle.
+
+In the OTP generation, one step really was unnoticed. This implementation was not difficult and I was able to fix the variables, keeping them within the functions and always checking if they were setted before. Correcting the permission of access to camera, telling its need to the user, it was easy too.
+
+#### Conclusion
+
+Int the fixes' implementation I did not find any difficlties. I had a brief contact with the use of "Alarm Manager" and I already knew a bit about its functionality. And the others corrections werer only code optimization.
+
+My biggest challenge and difficulty was about safety techniques. I did not find much information on the subject and I could not implement them. I would like to learn more about it, and so, be able to use these techniques in the current and future projects development.
 
