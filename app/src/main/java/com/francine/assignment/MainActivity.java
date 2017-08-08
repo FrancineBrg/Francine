@@ -1,54 +1,54 @@
 package com.francine.assignment;
 
+import android.*;
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.DecimalFormat;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.Calendar;
 
 public class MainActivity extends Activity {
 
+    private TextView textLabel;
     private TextView textKey;
     private Button btnGetKey;
     private Button btnDelete;
-    private Timer timer;
-    private TimerTask task;
-    private DecimalFormat df = new DecimalFormat("000000");
 
-    private String key;
-    private byte hash[];
-    private long otp;
-    private int cont = 0;
-
+    private static final int REQUEST_CODE = 1;
     private static final int RC_HANDLE_CAMERA_PERM = 2;
-    private static final int SECONDS_TO_UPDATE = 30 - 1;
+    private static final int PERMISSION_REQUEST_CAMERA = 1;
+    private static final int MINUTE = 60;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textKey = (TextView) findViewById(R.id.text_key);
-        btnGetKey = (Button) findViewById(R.id.btn_get_key);
-        btnDelete = (Button) findViewById(R.id.btn_delete);
+        textLabel = findViewById(R.id.text_label);
+        textKey = findViewById(R.id.text_key);
+        btnGetKey = findViewById(R.id.btn_get_key);
+        btnDelete = findViewById(R.id.btn_delete);
 
         btnGetKey.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int rc = ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.CAMERA);
-                if (rc != PackageManager.PERMISSION_GRANTED) {
-                    requestCameraPermission();
-                } else {
-                    Intent intent = new Intent(MainActivity.this, ScanCodeActivity.class);
-                    startActivity(intent);
-                }
+                Intent intent = new Intent(MainActivity.this, ScanCodeActivity.class);
+                startActivityForResult(intent, REQUEST_CODE);
             }
         });
 
@@ -56,105 +56,124 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 Preferences prefs = new Preferences();
-                prefs.setPreferences(null, MainActivity.this);
-                onResume();
+                prefs.setPreferencesKey(null, MainActivity.this);
+                prefs.setPreferencesLabel(null, MainActivity.this);
+                updateUi();
             }
         });
 
-        setTimer();
+        updateUi();
+        scheduleAlarm();
+        requestCameraPermission();
+
+        IntentFilter filter = new IntentFilter("com.francine.assignment.MainActivity");
+        registerReceiver(new BroadcastReceiver(){
+            public void onReceive(Context context, Intent intent) {
+                updateUi();
+            }
+        }, filter);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        int rc = ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.CAMERA);
-        if (rc != PackageManager.PERMISSION_GRANTED) {
-            requestCameraPermission();
-        }
-
+    private void updateUi() {
         Preferences prefs = new Preferences();
-        key = prefs.getPreferences(this);
-        displayOtp();
-        setTimer();
-    }
+        String label = prefs.getPreferencesLabel(this);
+        String key = prefs.getPreferencesKey(this);
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        try {
-            cont = 0;
-            task.cancel();
-            timer.cancel();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+        if ((label != null) && (key != null)) {
+            byte[] hash = generateOtp(key);
+            int offset = 10;
+            long otp = 0;
+            if (hash != null) {
+                int binary = ((hash[offset] & 0x7f) << 24) | ((hash[offset + 1] & 0xff) << 16)
+                        | ((hash[offset + 2] & 0xff) << 8) | (hash[offset + 3] & 0xff);
+                otp = binary % 1000000;
+            }
+            DecimalFormat df = new DecimalFormat("000000");
 
-    // Handles the requesting of the camera permission.
-    private void requestCameraPermission() {
-        final String[] permissions = new String[]{android.Manifest.permission.CAMERA};
-        ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM);
-    }
-
-    private void generate() {
-        byte aux[] = new byte[4];
-        aux[0] = hash[10];
-        aux[1] = hash[11];
-        aux[2] = hash[12];
-        aux[3] = hash[13];
-
-        StringBuilder sb = new StringBuilder(aux.length * 2);
-        for(byte b: aux)
-            sb.append(String.format("%02x", b));
-
-        otp = Long.parseLong(sb.toString(), 16) % 1000000;
-    };
-
-    private void displayOtp() {
-        if (key != null) {
-            hash = generateOtp(key);
-            generate();
+            textLabel.setText(label);
             textKey.setText(df.format(otp));
             btnGetKey.setVisibility(View.GONE);
         } else {
+            textLabel.setText("");
             textKey.setText("");
             btnGetKey.setVisibility(View.VISIBLE);
         }
-    };
+    }
 
-    private void setTimer() {
-        timer = new Timer();
+    private void scheduleAlarm() {
+        AlarmManager manager =  (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
 
-        if (task != null) {
-            task.cancel();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+
+        int seconds2Minute = calendar.get(Calendar.SECOND);
+
+        if (seconds2Minute < (MINUTE/2))
+        {
+            seconds2Minute = (MINUTE/2) - seconds2Minute;
+        } else {
+            seconds2Minute = MINUTE - seconds2Minute;
         }
 
-        task = new TimerTask() {
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (cont <= 0) {
-                                displayOtp();
-                                cont = SECONDS_TO_UPDATE;
-                            } else {
-                                cont--;
+        long inicio = calendar.getTimeInMillis() + seconds2Minute * 1000;
+        manager.set(AlarmManager.RTC_WAKEUP, inicio, alarmIntent);
+    }
+
+    private void requestCameraPermission() {
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, PERMISSION_REQUEST_CAMERA);
+        }
+    }
+
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSION_REQUEST_CAMERA: {
+                if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+
+                    if (!ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.CAMERA)) {
+                        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        builder.setTitle("Permission denied");
+                        builder.setMessage("To scan QR code, allow access to camera in android settings.");
+                        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                finish();
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        });
+                        builder.show();
+                    } else {
+                        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        builder.setTitle("Limited functionality");
+                        builder.setMessage("If camera access is not granted, this application will not be able to scan QR code.");
+                        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                finish();
+                            }
+                        });
+                        builder.show();
                     }
-                });
+                }
+                return;
             }
-        };
-        timer.schedule(task, 1000, 1000); ;
-    };
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (REQUEST_CODE == requestCode) {
+            updateUi();
+        }
+    }
 
     public native byte[] generateOtp(String key);
 
     static {
         System.loadLibrary("otpjni");
     }
+
+
 }

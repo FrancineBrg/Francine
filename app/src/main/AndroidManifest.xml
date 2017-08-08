@@ -23,6 +23,11 @@
         </activity>
 
         <activity android:name=".ScanCodeActivity"/>
+
+        <receiver
+            android:name=".AlarmReceiver"
+            android:process=":remote"
+            android:exported="false"/>
     </application>
 
 </manifest>

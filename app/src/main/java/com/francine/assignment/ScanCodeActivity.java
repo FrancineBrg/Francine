@@ -26,13 +26,14 @@ public class ScanCodeActivity extends Activity {
     private CameraSource cameraSource;
     private SurfaceView cameraView;
 
+    private static final int RESULT_CODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan_code);
 
-        cameraView = (SurfaceView) findViewById(R.id.surface_view);
+        cameraView = findViewById(R.id.surface_view);
 
         barcodeDetector = new BarcodeDetector.Builder(this)
                 .setBarcodeFormats(Barcode.ALL_FORMATS)
@@ -84,7 +85,14 @@ public class ScanCodeActivity extends Activity {
 
                         String key = jsonObj.getString("key");
                         Preferences prefs = new Preferences();
-                        prefs.setPreferences(key, ScanCodeActivity.this);
+                        prefs.setPreferencesKey(key, ScanCodeActivity.this);
+
+                        String label = jsonObj.getString("label");
+                        prefs.setPreferencesLabel(label, ScanCodeActivity.this);
+
+                        setResult(RESULT_CODE);
+                        cameraSource.release();
+                        barcodeDetector.release();
                         finish();
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -92,12 +100,5 @@ public class ScanCodeActivity extends Activity {
                 }
             }
         });
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        cameraSource.release();
-        barcodeDetector.release();
     }
 }
